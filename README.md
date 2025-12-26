@@ -19,8 +19,8 @@ This project demonstrates a **doc-first development workflow**:
 
 ```bash
 # Clone the repo
-git clone https://github.com/YOUR_USERNAME/synapse.git
-cd synapse
+git clone https://github.com/copyleftdev/synapse-spec-first.git
+cd synapse-spec-first
 
 # Download dependencies
 go mod tidy

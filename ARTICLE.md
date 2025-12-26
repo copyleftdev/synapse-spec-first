@@ -228,8 +228,8 @@ The overhead is front-loaded. The payoff compounds forever.
 
 ```bash
 # Clone the repo
-git clone <repo-url>
-cd synapse
+git clone https://github.com/copyleftdev/synapse-spec-first.git
+cd synapse-spec-first
 
 # Run the generator
 go run ./cmd/synctl
