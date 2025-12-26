@@ -1,0 +1,44 @@
+# Schema Index
+
+# Order Schemas
+OrderCreateRequest:
+  $ref: './orders.yaml#/OrderCreateRequest'
+
+OrderAcceptedResponse:
+  $ref: './orders.yaml#/OrderAcceptedResponse'
+
+OrderResponse:
+  $ref: './orders.yaml#/OrderResponse'
+
+OrderListResponse:
+  $ref: './orders.yaml#/OrderListResponse'
+
+OrderCancelledResponse:
+  $ref: './orders.yaml#/OrderCancelledResponse'
+
+OrderEventsResponse:
+  $ref: './orders.yaml#/OrderEventsResponse'
+
+# Pipeline Schemas
+PipelineStagesResponse:
+  $ref: './pipeline.yaml#/PipelineStagesResponse'
+
+PipelineStageResponse:
+  $ref: './pipeline.yaml#/PipelineStageResponse'
+
+PipelineStageUpdateRequest:
+  $ref: './pipeline.yaml#/PipelineStageUpdateRequest'
+
+DLQListResponse:
+  $ref: './pipeline.yaml#/DLQListResponse'
+
+# Health Schemas
+HealthResponse:
+  $ref: './health.yaml#/HealthResponse'
+
+# Error Schemas
+ProblemDetails:
+  $ref: './errors.yaml#/ProblemDetails'
+
+ValidationProblemDetails:
+  $ref: './errors.yaml#/ValidationProblemDetails'

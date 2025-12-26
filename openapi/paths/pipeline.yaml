@@ -1,0 +1,301 @@
+# Pipeline Endpoints
+
+stages:
+  get:
+    operationId: listPipelineStages
+    summary: List pipeline stages
+    description: |
+      Returns the current status and metrics for all pipeline stages.
+      
+      Includes processing rates, error rates, and queue depths.
+    tags:
+      - Pipeline
+    security:
+      - BearerAuth: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/RequestId'
+    responses:
+      '200':
+        description: |
+          **OK** (RFC 9110 §15.3.1)
+          
+          Pipeline stage information returned.
+        headers:
+          X-Request-Id:
+            $ref: '../components/headers.yaml#/X-Request-Id'
+          Cache-Control:
+            schema:
+              type: string
+              example: "no-cache"
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/pipeline.yaml#/PipelineStagesResponse'
+            example:
+              stages:
+                - stageId: "validate"
+                  status: "healthy"
+                  metrics:
+                    processedTotal: 15420
+                    processedLastHour: 842
+                    errorRate: 0.02
+                    avgLatencyMs: 8
+                    queueDepth: 3
+                - stageId: "enrich"
+                  status: "healthy"
+                  metrics:
+                    processedTotal: 15102
+                    processedLastHour: 825
+                    errorRate: 0.05
+                    avgLatencyMs: 45
+                    queueDepth: 12
+                - stageId: "route"
+                  status: "healthy"
+                  metrics:
+                    processedTotal: 14987
+                    processedLastHour: 820
+                    errorRate: 0.01
+                    avgLatencyMs: 3
+                    queueDepth: 0
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+stage:
+  get:
+    operationId: getPipelineStage
+    summary: Get pipeline stage details
+    description: |
+      Returns detailed information about a specific pipeline stage,
+      including configuration, recent errors, and extended metrics.
+    tags:
+      - Pipeline
+    security:
+      - BearerAuth: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/StageId'
+      - $ref: '../components/parameters.yaml#/RequestId'
+    responses:
+      '200':
+        description: |
+          **OK** (RFC 9110 §15.3.1)
+          
+          Stage details returned.
+        headers:
+          X-Request-Id:
+            $ref: '../components/headers.yaml#/X-Request-Id'
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/pipeline.yaml#/PipelineStageResponse'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+  patch:
+    operationId: updatePipelineStage
+    summary: Update pipeline stage configuration
+    description: |
+      Updates configuration for a pipeline stage (e.g., pause/resume,
+      adjust concurrency, modify retry policy).
+      
+      **Conditional**: Use If-Match to prevent concurrent modifications (RFC 7232).
+    tags:
+      - Pipeline
+    security:
+      - BearerAuth: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/StageId'
+      - $ref: '../components/parameters.yaml#/IfMatch'
+      - $ref: '../components/parameters.yaml#/RequestId'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/pipeline.yaml#/PipelineStageUpdateRequest'
+          examples:
+            pause:
+              summary: Pause a stage
+              value:
+                status: "paused"
+            adjustConcurrency:
+              summary: Adjust concurrency
+              value:
+                concurrency: 10
+            updateRetry:
+              summary: Update retry policy
+              value:
+                retryPolicy:
+                  maxAttempts: 5
+                  backoffMs: 1000
+                  backoffMultiplier: 2.0
+    responses:
+      '200':
+        description: |
+          **OK** (RFC 9110 §15.3.1)
+          
+          Stage configuration updated.
+        headers:
+          ETag:
+            $ref: '../components/headers.yaml#/ETag'
+          X-Request-Id:
+            $ref: '../components/headers.yaml#/X-Request-Id'
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/pipeline.yaml#/PipelineStageResponse'
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '412':
+        $ref: '../components/responses.yaml#/PreconditionFailed'
+      '422':
+        $ref: '../components/responses.yaml#/UnprocessableContent'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+dlq:
+  get:
+    operationId: listDLQItems
+    summary: List dead letter queue items
+    description: |
+      Retrieves items in the dead letter queue (DLQ) with pagination.
+      
+      DLQ items are orders that failed processing after exhausting retry attempts.
+    tags:
+      - Pipeline
+    security:
+      - BearerAuth: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/Limit'
+      - $ref: '../components/parameters.yaml#/Cursor'
+      - $ref: '../components/parameters.yaml#/FailedStageFilter'
+      - $ref: '../components/parameters.yaml#/RequestId'
+    responses:
+      '200':
+        description: |
+          **OK** (RFC 9110 §15.3.1)
+          
+          DLQ items returned.
+        headers:
+          Link:
+            description: Pagination links per RFC 8288
+            schema:
+              type: string
+          X-Total-Count:
+            description: Total DLQ items
+            schema:
+              type: integer
+          X-Request-Id:
+            $ref: '../components/headers.yaml#/X-Request-Id'
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/pipeline.yaml#/DLQListResponse'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+dlqRetry:
+  post:
+    operationId: retryDLQItem
+    summary: Retry a DLQ item
+    description: |
+      Resubmits a failed order from the DLQ back into the pipeline.
+      
+      The order will be reprocessed starting from the stage where it failed.
+      
+      **Idempotency**: Use Idempotency-Key to prevent duplicate resubmissions.
+    tags:
+      - Pipeline
+    security:
+      - BearerAuth: []
+    parameters:
+      - name: eventId
+        in: path
+        required: true
+        description: The DLQ event ID to retry
+        schema:
+          type: string
+          format: uuid
+      - $ref: '../components/parameters.yaml#/IdempotencyKey'
+      - $ref: '../components/parameters.yaml#/RequestId'
+    requestBody:
+      required: false
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              fromStage:
+                type: string
+                description: Override the starting stage (default is failed stage)
+                enum:
+                  - validate
+                  - enrich
+                  - route
+              priority:
+                type: string
+                description: Override priority for retry
+                enum:
+                  - low
+                  - normal
+                  - high
+    responses:
+      '202':
+        description: |
+          **Accepted** (RFC 9110 §15.3.3)
+          
+          Item resubmitted to pipeline.
+        headers:
+          Location:
+            description: URI of the order being reprocessed
+            schema:
+              type: string
+              format: uri
+          X-Request-Id:
+            $ref: '../components/headers.yaml#/X-Request-Id'
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                eventId:
+                  type: string
+                  format: uuid
+                orderId:
+                  type: string
+                  format: uuid
+                status:
+                  type: string
+                  example: "requeued"
+                fromStage:
+                  type: string
+                message:
+                  type: string
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '409':
+        description: |
+          **Conflict** (RFC 9110 §15.5.10)
+          
+          Item has already been retried or is currently being processed.
+        content:
+          application/problem+json:
+            schema:
+              $ref: '../components/schemas/errors.yaml#/ProblemDetails'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'

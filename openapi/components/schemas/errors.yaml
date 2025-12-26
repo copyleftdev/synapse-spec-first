@@ -1,0 +1,95 @@
+# Error Schemas - RFC 9457 Problem Details
+
+ProblemDetails:
+  type: object
+  description: |
+    Error response format per RFC 9457 (Problem Details for HTTP APIs).
+    
+    This format provides machine-readable error details with human-readable
+    descriptions, enabling clients to handle errors programmatically.
+  required:
+    - type
+    - title
+    - status
+  properties:
+    type:
+      type: string
+      format: uri
+      description: |
+        A URI reference that identifies the problem type.
+        When dereferenced, should provide human-readable documentation.
+        Use "about:blank" if no specific type URI is available.
+      example: "https://synapse.example.com/problems/validation-error"
+    title:
+      type: string
+      description: |
+        A short, human-readable summary of the problem type.
+        Should NOT change between occurrences of the same problem type.
+      example: "Validation Error"
+    status:
+      type: integer
+      description: |
+        The HTTP status code for this occurrence of the problem.
+        Must match the actual HTTP response status code.
+      minimum: 400
+      maximum: 599
+      example: 422
+    detail:
+      type: string
+      description: |
+        A human-readable explanation specific to this occurrence.
+        Should focus on helping the client correct the problem.
+      example: "The 'quantity' field must be a positive integer"
+    instance:
+      type: string
+      format: uri-reference
+      description: |
+        A URI reference that identifies the specific occurrence.
+        Typically the request path.
+      example: "/api/v1/orders"
+  additionalProperties: true
+
+ValidationProblemDetails:
+  allOf:
+    - $ref: '#/ProblemDetails'
+    - type: object
+      properties:
+        errors:
+          type: array
+          description: Detailed validation errors for each invalid field
+          items:
+            $ref: '#/ValidationError'
+
+ValidationError:
+  type: object
+  required:
+    - field
+    - code
+    - message
+  properties:
+    field:
+      type: string
+      description: |
+        JSON path to the invalid field.
+        Uses dot notation for nested objects, brackets for arrays.
+      examples:
+        - "customerId"
+        - "items[0].quantity"
+        - "shippingAddress.postalCode"
+    code:
+      type: string
+      description: |
+        Machine-readable error code for this validation failure.
+        Clients can use this for i18n or programmatic handling.
+      examples:
+        - "required"
+        - "min_value"
+        - "invalid_format"
+        - "max_length"
+    message:
+      type: string
+      description: Human-readable error message
+      example: "Quantity must be at least 1"
+    rejectedValue:
+      description: The value that was rejected (if safe to expose)
+      example: -5

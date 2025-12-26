@@ -1,0 +1,161 @@
+# Order Request/Response Examples
+
+StandardOrder:
+  summary: Standard order with shipping address
+  value:
+    customerId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    items:
+      - sku: "WIDGET-001"
+        productName: "Premium Widget"
+        quantity: 2
+        unitPrice: 29.99
+      - sku: "GADGET-042"
+        productName: "Super Gadget"
+        quantity: 1
+        unitPrice: 49.99
+    totalAmount: 109.97
+    currency: "USD"
+    shippingAddress:
+      street: "123 Main Street"
+      street2: "Apt 4B"
+      city: "San Francisco"
+      state: "CA"
+      postalCode: "94102"
+      country: "US"
+
+HighValueOrder:
+  summary: High-value order (triggers enhanced fraud checks)
+  value:
+    orderId: "550e8400-e29b-41d4-a716-446655440000"
+    customerId: "b2c3d4e5-f6a7-8901-bcde-f12345678901"
+    items:
+      - sku: "LUXURY-001"
+        productName: "Luxury Item"
+        quantity: 1
+        unitPrice: 2499.99
+      - sku: "LUXURY-002"
+        productName: "Premium Accessory"
+        quantity: 2
+        unitPrice: 499.99
+    totalAmount: 3499.97
+    currency: "USD"
+    shippingAddress:
+      street: "456 Oak Avenue"
+      city: "New York"
+      state: "NY"
+      postalCode: "10001"
+      country: "US"
+    billingAddress:
+      street: "789 Pine Road"
+      city: "Boston"
+      state: "MA"
+      postalCode: "02101"
+      country: "US"
+    metadata:
+      source: "mobile-app"
+      campaign: "holiday-2024"
+
+MinimalOrder:
+  summary: Minimal valid order (no optional fields)
+  value:
+    customerId: "c3d4e5f6-a7b8-9012-cdef-123456789012"
+    items:
+      - sku: "BASIC-001"
+        quantity: 1
+        unitPrice: 9.99
+    totalAmount: 9.99
+    currency: "USD"
+
+OrderProcessing:
+  summary: Order currently being processed
+  value:
+    orderId: "550e8400-e29b-41d4-a716-446655440000"
+    customerId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    status: "enriching"
+    currentStage: "enrich-customer"
+    items:
+      - sku: "WIDGET-001"
+        productName: "Premium Widget"
+        quantity: 2
+        unitPrice: 29.99
+    totalAmount: 59.98
+    currency: "USD"
+    shippingAddress:
+      street: "123 Main Street"
+      city: "San Francisco"
+      state: "CA"
+      postalCode: "94102"
+      country: "US"
+    createdAt: "2024-01-15T10:30:00.000Z"
+    updatedAt: "2024-01-15T10:30:00.150Z"
+    links:
+      self: "/api/v1/orders/550e8400-e29b-41d4-a716-446655440000"
+      events: "/api/v1/orders/550e8400-e29b-41d4-a716-446655440000/events"
+
+OrderCompleted:
+  summary: Successfully routed order
+  value:
+    orderId: "550e8400-e29b-41d4-a716-446655440000"
+    customerId: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    status: "routed"
+    items:
+      - sku: "WIDGET-001"
+        productName: "Premium Widget"
+        quantity: 2
+        unitPrice: 29.99
+    totalAmount: 59.98
+    currency: "USD"
+    shippingAddress:
+      street: "123 Main Street"
+      city: "San Francisco"
+      state: "CA"
+      postalCode: "94102"
+      country: "US"
+    enrichment:
+      customer:
+        tier: "gold"
+        accountAgeDays: 730
+        lifetimeValue: 4521.50
+        orderCount: 47
+      inventory:
+        allAvailable: true
+      fraud:
+        score: 12
+        riskLevel: "low"
+        signals: []
+    routing:
+      destination: "fulfillment"
+      reason: "All checks passed: low fraud risk, inventory available, gold customer"
+      priority: "high"
+      routedAt: "2024-01-15T10:30:00.250Z"
+    createdAt: "2024-01-15T10:30:00.000Z"
+    updatedAt: "2024-01-15T10:30:00.250Z"
+    links:
+      self: "/api/v1/orders/550e8400-e29b-41d4-a716-446655440000"
+      events: "/api/v1/orders/550e8400-e29b-41d4-a716-446655440000/events"
+
+OrderFailed:
+  summary: Order that failed processing
+  value:
+    orderId: "661f9511-f3ac-52e5-b827-557766551111"
+    customerId: "d4e5f6a7-b8c9-0123-def0-234567890123"
+    status: "failed"
+    currentStage: "enrich"
+    items:
+      - sku: "RARE-001"
+        productName: "Rare Item"
+        quantity: 1
+        unitPrice: 199.99
+    totalAmount: 199.99
+    currency: "USD"
+    shippingAddress:
+      street: "999 Error Lane"
+      city: "Failtown"
+      state: "XX"
+      postalCode: "00000"
+      country: "US"
+    createdAt: "2024-01-15T11:00:00.000Z"
+    updatedAt: "2024-01-15T11:00:05.500Z"
+    links:
+      self: "/api/v1/orders/661f9511-f3ac-52e5-b827-557766551111"
+      events: "/api/v1/orders/661f9511-f3ac-52e5-b827-557766551111/events"

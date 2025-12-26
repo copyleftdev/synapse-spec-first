@@ -1,0 +1,335 @@
+# Order Endpoints
+
+collection:
+  post:
+    operationId: ingestOrder
+    summary: Ingest a new order
+    description: |
+      Accepts an order for processing through the Synapse pipeline.
+      
+      The order is validated synchronously. If valid, it is published to the
+      pipeline and a `202 Accepted` response is returned with a Location header
+      pointing to the order resource.
+      
+      **Idempotency**: Clients SHOULD provide an `Idempotency-Key` header (RFC draft).
+      Duplicate submissions with the same key within 24 hours return the original response.
+    tags:
+      - Orders
+    security:
+      - BearerAuth: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/IdempotencyKey'
+      - $ref: '../components/parameters.yaml#/RequestId'
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/orders.yaml#/OrderCreateRequest'
+          examples:
+            standard:
+              $ref: '../components/examples/orders.yaml#/StandardOrder'
+            highValue:
+              $ref: '../components/examples/orders.yaml#/HighValueOrder'
+            minimal:
+              $ref: '../components/examples/orders.yaml#/MinimalOrder'
+    responses:
+      '202':
+        description: |
+          **Accepted** (RFC 9110 §15.3.3)
+          
+          Order accepted for asynchronous processing. The response includes
+          a Location header with the URI to query order status.
+        headers:
+          Location:
+            description: URI of the created order resource (RFC 9110 §10.2.2)
+            schema:
+              type: string
+              format: uri-reference
+              example: "/api/v1/orders/550e8400-e29b-41d4-a716-446655440000"
+          X-Request-Id:
+            $ref: '../components/headers.yaml#/X-Request-Id'
+          RateLimit-Limit:
+            $ref: '../components/headers.yaml#/RateLimit-Limit'
+          RateLimit-Remaining:
+            $ref: '../components/headers.yaml#/RateLimit-Remaining'
+          RateLimit-Reset:
+            $ref: '../components/headers.yaml#/RateLimit-Reset'
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/orders.yaml#/OrderAcceptedResponse'
+            example:
+              orderId: "550e8400-e29b-41d4-a716-446655440000"
+              status: "accepted"
+              message: "Order accepted for processing"
+              links:
+                self: "/api/v1/orders/550e8400-e29b-41d4-a716-446655440000"
+                events: "/api/v1/orders/550e8400-e29b-41d4-a716-446655440000/events"
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '409':
+        description: |
+          **Conflict** (RFC 9110 §15.5.10)
+          
+          Order with this ID already exists. Use GET to retrieve current state.
+        content:
+          application/problem+json:
+            schema:
+              $ref: '../components/schemas/errors.yaml#/ProblemDetails'
+            example:
+              type: "https://synapse.example.com/problems/order-exists"
+              title: "Order Already Exists"
+              status: 409
+              detail: "Order with ID 550e8400-e29b-41d4-a716-446655440000 already exists"
+              instance: "/api/v1/orders"
+              orderId: "550e8400-e29b-41d4-a716-446655440000"
+      '422':
+        $ref: '../components/responses.yaml#/UnprocessableContent'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+      '503':
+        $ref: '../components/responses.yaml#/ServiceUnavailable'
+
+  get:
+    operationId: listOrders
+    summary: List orders
+    description: |
+      Retrieves a paginated list of orders with optional filtering.
+      
+      **Pagination**: Uses cursor-based pagination via Link headers (RFC 8288).
+      The `next` and `prev` links are provided when applicable.
+      
+      **Caching**: Responses include Cache-Control headers. Use If-None-Match
+      with the ETag for conditional requests (RFC 7232).
+    tags:
+      - Orders
+    security:
+      - BearerAuth: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/Limit'
+      - $ref: '../components/parameters.yaml#/Cursor'
+      - $ref: '../components/parameters.yaml#/StatusFilter'
+      - $ref: '../components/parameters.yaml#/CreatedAfter'
+      - $ref: '../components/parameters.yaml#/CreatedBefore'
+      - $ref: '../components/parameters.yaml#/RequestId'
+    responses:
+      '200':
+        description: |
+          **OK** (RFC 9110 §15.3.1)
+          
+          Successfully retrieved order list.
+        headers:
+          Link:
+            description: Pagination links per RFC 8288
+            schema:
+              type: string
+              example: '</api/v1/orders?cursor=eyJpZCI6MTAwfQ>; rel="next", </api/v1/orders?cursor=eyJpZCI6NTB9>; rel="prev"'
+          ETag:
+            $ref: '../components/headers.yaml#/ETag'
+          Cache-Control:
+            $ref: '../components/headers.yaml#/Cache-Control'
+          X-Request-Id:
+            $ref: '../components/headers.yaml#/X-Request-Id'
+          X-Total-Count:
+            description: Total number of orders matching the filter
+            schema:
+              type: integer
+              example: 1542
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/orders.yaml#/OrderListResponse'
+      '304':
+        description: |
+          **Not Modified** (RFC 9110 §15.4.5)
+          
+          Resource unchanged since last request. Use cached version.
+      '400':
+        $ref: '../components/responses.yaml#/BadRequest'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+resource:
+  get:
+    operationId: getOrder
+    summary: Get order by ID
+    description: |
+      Retrieves detailed information about a specific order, including
+      its current pipeline status and any enrichment data.
+      
+      **Conditional Requests**: Supports If-None-Match for cache validation (RFC 7232).
+    tags:
+      - Orders
+    security:
+      - BearerAuth: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/OrderId'
+      - $ref: '../components/parameters.yaml#/IfNoneMatch'
+      - $ref: '../components/parameters.yaml#/RequestId'
+    responses:
+      '200':
+        description: |
+          **OK** (RFC 9110 §15.3.1)
+          
+          Order found and returned.
+        headers:
+          ETag:
+            $ref: '../components/headers.yaml#/ETag'
+          Cache-Control:
+            $ref: '../components/headers.yaml#/Cache-Control'
+          Last-Modified:
+            $ref: '../components/headers.yaml#/Last-Modified'
+          X-Request-Id:
+            $ref: '../components/headers.yaml#/X-Request-Id'
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/orders.yaml#/OrderResponse'
+            examples:
+              processing:
+                $ref: '../components/examples/orders.yaml#/OrderProcessing'
+              completed:
+                $ref: '../components/examples/orders.yaml#/OrderCompleted'
+              failed:
+                $ref: '../components/examples/orders.yaml#/OrderFailed'
+      '304':
+        description: |
+          **Not Modified** (RFC 9110 §15.4.5)
+          
+          ETag matches; use cached response.
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+  delete:
+    operationId: cancelOrder
+    summary: Cancel an order
+    description: |
+      Attempts to cancel an order. Only orders in `accepted` or `processing`
+      status can be cancelled. Orders already routed cannot be cancelled.
+      
+      **Idempotency**: Cancelling an already-cancelled order returns 200.
+      
+      **Conditional**: Use If-Match to ensure you're cancelling the expected version (RFC 7232).
+    tags:
+      - Orders
+    security:
+      - BearerAuth: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/OrderId'
+      - $ref: '../components/parameters.yaml#/IfMatch'
+      - $ref: '../components/parameters.yaml#/RequestId'
+    responses:
+      '200':
+        description: |
+          **OK** (RFC 9110 §15.3.1)
+          
+          Order successfully cancelled (or was already cancelled).
+        headers:
+          X-Request-Id:
+            $ref: '../components/headers.yaml#/X-Request-Id'
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/orders.yaml#/OrderCancelledResponse'
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '409':
+        description: |
+          **Conflict** (RFC 9110 §15.5.10)
+          
+          Order cannot be cancelled in its current state.
+        content:
+          application/problem+json:
+            schema:
+              $ref: '../components/schemas/errors.yaml#/ProblemDetails'
+            example:
+              type: "https://synapse.example.com/problems/order-not-cancellable"
+              title: "Order Cannot Be Cancelled"
+              status: 409
+              detail: "Order has already been routed to fulfillment and cannot be cancelled"
+              instance: "/api/v1/orders/550e8400-e29b-41d4-a716-446655440000"
+              currentStatus: "routed"
+      '412':
+        $ref: '../components/responses.yaml#/PreconditionFailed'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'
+
+events:
+  get:
+    operationId: getOrderEvents
+    summary: Get order event history
+    description: |
+      Retrieves the complete event history for an order, showing each
+      pipeline stage it passed through with timestamps and metadata.
+      
+      Useful for debugging and audit trails.
+    tags:
+      - Orders
+    security:
+      - BearerAuth: []
+    parameters:
+      - $ref: '../components/parameters.yaml#/OrderId'
+      - $ref: '../components/parameters.yaml#/RequestId'
+    responses:
+      '200':
+        description: |
+          **OK** (RFC 9110 §15.3.1)
+          
+          Event history returned.
+        headers:
+          X-Request-Id:
+            $ref: '../components/headers.yaml#/X-Request-Id'
+          Cache-Control:
+            $ref: '../components/headers.yaml#/Cache-Control'
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/orders.yaml#/OrderEventsResponse'
+            example:
+              orderId: "550e8400-e29b-41d4-a716-446655440000"
+              events:
+                - eventId: "evt_001"
+                  stage: "ingest"
+                  status: "completed"
+                  timestamp: "2024-01-15T10:30:00.000Z"
+                  durationMs: 5
+                - eventId: "evt_002"
+                  stage: "validate"
+                  status: "completed"
+                  timestamp: "2024-01-15T10:30:00.012Z"
+                  durationMs: 12
+                - eventId: "evt_003"
+                  stage: "enrich"
+                  status: "completed"
+                  timestamp: "2024-01-15T10:30:00.045Z"
+                  durationMs: 33
+                  metadata:
+                    customerTier: "gold"
+                    fraudScore: 12
+      '401':
+        $ref: '../components/responses.yaml#/Unauthorized'
+      '404':
+        $ref: '../components/responses.yaml#/NotFound'
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+      '500':
+        $ref: '../components/responses.yaml#/InternalServerError'

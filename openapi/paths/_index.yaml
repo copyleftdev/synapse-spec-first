@@ -1,0 +1,34 @@
+# Path Index
+
+/api/v1/orders:
+  $ref: './orders.yaml#/collection'
+
+/api/v1/orders/{orderId}:
+  $ref: './orders.yaml#/resource'
+
+/api/v1/orders/{orderId}/events:
+  $ref: './orders.yaml#/events'
+
+/api/v1/pipeline/stages:
+  $ref: './pipeline.yaml#/stages'
+
+/api/v1/pipeline/stages/{stageId}:
+  $ref: './pipeline.yaml#/stage'
+
+/api/v1/pipeline/dlq:
+  $ref: './pipeline.yaml#/dlq'
+
+/api/v1/pipeline/dlq/{eventId}/retry:
+  $ref: './pipeline.yaml#/dlqRetry'
+
+/health:
+  $ref: './health.yaml#/health'
+
+/health/live:
+  $ref: './health.yaml#/liveness'
+
+/health/ready:
+  $ref: './health.yaml#/readiness'
+
+/metrics:
+  $ref: './health.yaml#/metrics'

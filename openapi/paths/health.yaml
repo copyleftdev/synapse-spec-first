@@ -1,0 +1,232 @@
+# Health & Observability Endpoints
+
+health:
+  get:
+    operationId: getHealth
+    summary: Get service health
+    description: |
+      Returns overall service health including status of all dependencies.
+      
+      This endpoint is suitable for load balancer health checks and provides
+      detailed component status for debugging.
+      
+      **No authentication required** - health endpoints are public for infrastructure use.
+    tags:
+      - Health
+    security: []
+    responses:
+      '200':
+        description: |
+          **OK** (RFC 9110 §15.3.1)
+          
+          Service is healthy. All critical dependencies are available.
+        headers:
+          Cache-Control:
+            schema:
+              type: string
+              example: "no-store"
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/health.yaml#/HealthResponse'
+            example:
+              status: "healthy"
+              version: "1.0.0"
+              uptime: 86400
+              timestamp: "2024-01-15T10:30:00.000Z"
+              components:
+                nats:
+                  status: "healthy"
+                  latencyMs: 1
+                postgres:
+                  status: "healthy"
+                  latencyMs: 3
+                redis:
+                  status: "healthy"
+                  latencyMs: 1
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+      '503':
+        description: |
+          **Service Unavailable** (RFC 9110 §15.6.4)
+          
+          Service is unhealthy. One or more critical dependencies are unavailable.
+        headers:
+          Retry-After:
+            $ref: '../components/headers.yaml#/Retry-After'
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/health.yaml#/HealthResponse'
+            example:
+              status: "unhealthy"
+              version: "1.0.0"
+              uptime: 86400
+              timestamp: "2024-01-15T10:30:00.000Z"
+              components:
+                nats:
+                  status: "unhealthy"
+                  error: "connection refused"
+                postgres:
+                  status: "healthy"
+                  latencyMs: 3
+                redis:
+                  status: "healthy"
+                  latencyMs: 1
+
+liveness:
+  get:
+    operationId: getLiveness
+    summary: Kubernetes liveness probe
+    description: |
+      Simple liveness check for Kubernetes.
+      
+      Returns 200 if the process is alive and able to handle requests.
+      Returns 503 if the service should be restarted.
+      
+      **Minimal overhead** - does not check dependencies.
+    tags:
+      - Health
+    security: []
+    responses:
+      '200':
+        description: |
+          **OK** (RFC 9110 §15.3.1)
+          
+          Service is alive.
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - ok
+            example:
+              status: "ok"
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+      '503':
+        description: |
+          **Service Unavailable** (RFC 9110 §15.6.4)
+          
+          Service should be restarted.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - error
+                reason:
+                  type: string
+
+readiness:
+  get:
+    operationId: getReadiness
+    summary: Kubernetes readiness probe
+    description: |
+      Readiness check for Kubernetes.
+      
+      Returns 200 if the service is ready to accept traffic.
+      Returns 503 if the service should be removed from load balancer rotation.
+      
+      **Checks critical dependencies** - NATS, PostgreSQL, Redis.
+    tags:
+      - Health
+    security: []
+    responses:
+      '200':
+        description: |
+          **OK** (RFC 9110 §15.3.1)
+          
+          Service is ready to accept traffic.
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - ready
+            example:
+              status: "ready"
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'
+      '503':
+        description: |
+          **Service Unavailable** (RFC 9110 §15.6.4)
+          
+          Service is not ready for traffic.
+        headers:
+          Retry-After:
+            $ref: '../components/headers.yaml#/Retry-After'
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - not_ready
+                reason:
+                  type: string
+                dependencies:
+                  type: object
+                  additionalProperties:
+                    type: string
+            example:
+              status: "not_ready"
+              reason: "dependency unavailable"
+              dependencies:
+                nats: "connection refused"
+                postgres: "ok"
+                redis: "ok"
+
+metrics:
+  get:
+    operationId: getMetrics
+    summary: Prometheus metrics
+    description: |
+      Returns metrics in Prometheus exposition format.
+      
+      Includes:
+      - HTTP request metrics (count, latency histograms)
+      - Pipeline stage metrics (processed, errors, latency)
+      - Dependency health metrics
+      - Go runtime metrics
+    tags:
+      - Health
+    security: []
+    responses:
+      '200':
+        description: |
+          **OK** (RFC 9110 §15.3.1)
+          
+          Prometheus metrics returned.
+        content:
+          text/plain:
+            schema:
+              type: string
+            example: |
+              # HELP synapse_orders_total Total orders processed
+              # TYPE synapse_orders_total counter
+              synapse_orders_total{status="accepted"} 15420
+              synapse_orders_total{status="rejected"} 23
+              
+              # HELP synapse_pipeline_stage_duration_seconds Pipeline stage processing time
+              # TYPE synapse_pipeline_stage_duration_seconds histogram
+              synapse_pipeline_stage_duration_seconds_bucket{stage="validate",le="0.01"} 14500
+              synapse_pipeline_stage_duration_seconds_bucket{stage="validate",le="0.05"} 15400
+              synapse_pipeline_stage_duration_seconds_bucket{stage="validate",le="+Inf"} 15420
+      '429':
+        $ref: '../components/responses.yaml#/TooManyRequests'

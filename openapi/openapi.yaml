@@ -1,0 +1,59 @@
+openapi: 3.1.0
+info:
+  title: Synapse API
+  version: 1.0.0
+  description: |
+    RESTful API for the Synapse event pipeline platform.
+    
+    ## Overview
+    Synapse ingests orders via HTTP, processes them through an event-driven pipeline,
+    and provides query capabilities for order status and pipeline health.
+    
+    ## Standards Compliance
+    This API adheres to the following RFCs:
+    - **RFC 9110** (HTTP Semantics) - Status codes, methods, headers
+    - **RFC 9457** (Problem Details) - Error response format
+    - **RFC 8288** (Web Linking) - Pagination via Link headers
+    - **RFC 7232** (Conditional Requests) - ETag, If-Match, If-None-Match
+    - **RFC 6585** (Additional Status Codes) - 429 Too Many Requests
+    - **RFC 6750** (Bearer Tokens) - Authorization header format
+    - **RFC 3986** (URI Syntax) - Resource identifiers
+    
+    ## Content Negotiation
+    All endpoints support `application/json`. The API uses `application/problem+json`
+    for error responses per RFC 9457.
+    
+    ## Rate Limiting
+    Rate limit information is provided via headers per IETF draft-ietf-httpapi-ratelimit-headers:
+    - `RateLimit-Limit`: Request quota
+    - `RateLimit-Remaining`: Remaining requests
+    - `RateLimit-Reset`: Seconds until reset
+  contact:
+    name: Synapse Team
+    email: synapse@example.com
+  license:
+    name: MIT
+    identifier: MIT
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+  - url: http://synapse:8080
+    description: Docker/Testcontainers
+
+tags:
+  - name: Orders
+    description: Order ingestion and query operations
+  - name: Pipeline
+    description: Pipeline status and management
+  - name: Health
+    description: Service health and readiness
+
+paths:
+  $ref: './paths/_index.yaml'
+
+components:
+  $ref: './components/_index.yaml'
+
+security:
+  - BearerAuth: []

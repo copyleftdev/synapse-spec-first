@@ -1,0 +1,156 @@
+# Reusable Parameters
+
+# Path Parameters
+OrderId:
+  name: orderId
+  in: path
+  required: true
+  description: Unique order identifier (UUID v4)
+  schema:
+    type: string
+    format: uuid
+  example: "550e8400-e29b-41d4-a716-446655440000"
+
+StageId:
+  name: stageId
+  in: path
+  required: true
+  description: Pipeline stage identifier
+  schema:
+    type: string
+    enum:
+      - validate
+      - enrich
+      - route
+
+# Query Parameters - Pagination
+Limit:
+  name: limit
+  in: query
+  description: |
+    Maximum number of items to return (1-100).
+    Default: 20
+  schema:
+    type: integer
+    minimum: 1
+    maximum: 100
+    default: 20
+
+Cursor:
+  name: cursor
+  in: query
+  description: |
+    Opaque cursor for pagination. Obtained from Link header or response body.
+    
+    Do not construct cursors manually; always use values returned by the API.
+  schema:
+    type: string
+  example: "eyJpZCI6MTAwfQ"
+
+# Query Parameters - Filtering
+StatusFilter:
+  name: status
+  in: query
+  description: Filter orders by current status
+  schema:
+    type: array
+    items:
+      type: string
+      enum:
+        - accepted
+        - validating
+        - validated
+        - enriching
+        - enriched
+        - routing
+        - routed
+        - failed
+        - cancelled
+  style: form
+  explode: false
+  example: ["validated", "enriched"]
+
+FailedStageFilter:
+  name: failedStage
+  in: query
+  description: Filter DLQ items by the stage where failure occurred
+  schema:
+    type: string
+    enum:
+      - validate
+      - enrich
+      - route
+
+CreatedAfter:
+  name: createdAfter
+  in: query
+  description: |
+    Filter orders created after this timestamp (inclusive).
+    ISO 8601 format per RFC 3339.
+  schema:
+    type: string
+    format: date-time
+  example: "2024-01-01T00:00:00Z"
+
+CreatedBefore:
+  name: createdBefore
+  in: query
+  description: |
+    Filter orders created before this timestamp (exclusive).
+    ISO 8601 format per RFC 3339.
+  schema:
+    type: string
+    format: date-time
+  example: "2024-01-31T23:59:59Z"
+
+# Headers - Request
+RequestId:
+  name: X-Request-Id
+  in: header
+  description: |
+    Client-generated request identifier for tracing.
+    If not provided, the server generates one.
+    Returned in the response X-Request-Id header.
+  schema:
+    type: string
+    format: uuid
+  example: "7c4d89e0-3b4a-4f2a-9c1d-8e7f6a5b4c3d"
+
+IdempotencyKey:
+  name: Idempotency-Key
+  in: header
+  description: |
+    Idempotency key for safe request retries.
+    
+    If the same key is used within 24 hours, the original response is returned.
+    Keys should be unique per distinct request (e.g., UUID v4).
+    
+    See: IETF draft-ietf-httpapi-idempotency-key-header
+  schema:
+    type: string
+    maxLength: 256
+  example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+
+IfMatch:
+  name: If-Match
+  in: header
+  description: |
+    Conditional request header per RFC 7232.
+    
+    Request succeeds only if the resource's current ETag matches one of the provided values.
+    Use for safe concurrent updates (optimistic locking).
+  schema:
+    type: string
+  example: '"33a64df551425fcc55e4d42a148795d9f25f89d4"'
+
+IfNoneMatch:
+  name: If-None-Match
+  in: header
+  description: |
+    Conditional request header per RFC 7232.
+    
+    For GET: Returns 304 Not Modified if ETag matches (cache validation).
+    For PUT/DELETE: Prevents modification if resource exists (create-only).
+  schema:
+    type: string
+  example: '"33a64df551425fcc55e4d42a148795d9f25f89d4"'

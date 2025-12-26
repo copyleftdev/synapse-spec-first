@@ -1,0 +1,20 @@
+# Examples Index
+
+# Order Examples
+StandardOrder:
+  $ref: './orders.yaml#/StandardOrder'
+
+HighValueOrder:
+  $ref: './orders.yaml#/HighValueOrder'
+
+MinimalOrder:
+  $ref: './orders.yaml#/MinimalOrder'
+
+OrderProcessing:
+  $ref: './orders.yaml#/OrderProcessing'
+
+OrderCompleted:
+  $ref: './orders.yaml#/OrderCompleted'
+
+OrderFailed:
+  $ref: './orders.yaml#/OrderFailed'

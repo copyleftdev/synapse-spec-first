@@ -1,0 +1,215 @@
+# Pipeline Schemas
+
+PipelineStagesResponse:
+  type: object
+  required:
+    - stages
+  properties:
+    stages:
+      type: array
+      items:
+        $ref: '#/PipelineStageSummary'
+
+PipelineStageSummary:
+  type: object
+  required:
+    - stageId
+    - status
+    - metrics
+  properties:
+    stageId:
+      type: string
+      enum: [validate, enrich, route]
+    status:
+      $ref: '#/StageStatus'
+    metrics:
+      $ref: '#/StageMetrics'
+
+StageStatus:
+  type: string
+  enum:
+    - healthy
+    - degraded
+    - unhealthy
+    - paused
+  description: |
+    - `healthy`: Processing normally
+    - `degraded`: Elevated error rate or latency
+    - `unhealthy`: Stage is failing
+    - `paused`: Manually paused
+
+StageMetrics:
+  type: object
+  properties:
+    processedTotal:
+      type: integer
+      description: Total events processed since startup
+    processedLastHour:
+      type: integer
+    errorRate:
+      type: number
+      format: double
+      minimum: 0
+      maximum: 1
+      description: Error rate (0.0 to 1.0)
+    avgLatencyMs:
+      type: number
+      description: Average processing time in milliseconds
+    p99LatencyMs:
+      type: number
+      description: 99th percentile latency
+    queueDepth:
+      type: integer
+      description: Current items waiting to be processed
+
+PipelineStageResponse:
+  type: object
+  required:
+    - stageId
+    - status
+    - config
+    - metrics
+  properties:
+    stageId:
+      type: string
+    status:
+      $ref: '#/StageStatus'
+    config:
+      $ref: '#/StageConfig'
+    metrics:
+      $ref: '#/StageMetrics'
+    recentErrors:
+      type: array
+      maxItems: 10
+      items:
+        $ref: '#/StageError'
+    updatedAt:
+      type: string
+      format: date-time
+
+StageConfig:
+  type: object
+  properties:
+    concurrency:
+      type: integer
+      minimum: 1
+      maximum: 100
+      description: Number of concurrent workers
+    retryPolicy:
+      $ref: '#/RetryPolicy'
+    timeout:
+      type: string
+      description: Processing timeout (e.g., "30s", "5m")
+
+RetryPolicy:
+  type: object
+  properties:
+    maxAttempts:
+      type: integer
+      minimum: 0
+      maximum: 10
+    backoffMs:
+      type: integer
+      description: Initial backoff in milliseconds
+    backoffMultiplier:
+      type: number
+      description: Exponential backoff multiplier
+    maxBackoffMs:
+      type: integer
+      description: Maximum backoff cap
+
+StageError:
+  type: object
+  properties:
+    eventId:
+      type: string
+      format: uuid
+    errorType:
+      type: string
+    message:
+      type: string
+    timestamp:
+      type: string
+      format: date-time
+
+PipelineStageUpdateRequest:
+  type: object
+  minProperties: 1
+  properties:
+    status:
+      type: string
+      enum: [active, paused]
+      description: Set to paused to stop processing, active to resume
+    concurrency:
+      type: integer
+      minimum: 1
+      maximum: 100
+    retryPolicy:
+      $ref: '#/RetryPolicy'
+    timeout:
+      type: string
+      pattern: '^[0-9]+(s|m)$'
+      description: Timeout duration (e.g., "30s", "5m")
+
+DLQListResponse:
+  type: object
+  required:
+    - items
+    - pagination
+  properties:
+    items:
+      type: array
+      items:
+        $ref: '#/DLQItem'
+    pagination:
+      type: object
+      properties:
+        limit:
+          type: integer
+        cursor:
+          type: string
+        nextCursor:
+          type: string
+        hasMore:
+          type: boolean
+        totalCount:
+          type: integer
+
+DLQItem:
+  type: object
+  required:
+    - eventId
+    - orderId
+    - failedStage
+    - failedAt
+    - retryCount
+    - error
+  properties:
+    eventId:
+      type: string
+      format: uuid
+    orderId:
+      type: string
+      format: uuid
+    failedStage:
+      type: string
+    failedAt:
+      type: string
+      format: date-time
+    retryCount:
+      type: integer
+    lastRetryAt:
+      type: string
+      format: date-time
+    error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+    canRetry:
+      type: boolean
+      description: Whether this item can be retried

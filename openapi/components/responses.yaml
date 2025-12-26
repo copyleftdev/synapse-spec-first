@@ -1,0 +1,221 @@
+# Reusable Error Responses
+# All error responses use RFC 9457 Problem Details format
+
+BadRequest:
+  description: |
+    **Bad Request** (RFC 9110 §15.5.1)
+    
+    The request was malformed or contains invalid syntax.
+    Check the request body format and parameter values.
+  headers:
+    X-Request-Id:
+      $ref: './headers.yaml#/X-Request-Id'
+  content:
+    application/problem+json:
+      schema:
+        $ref: './schemas/errors.yaml#/ProblemDetails'
+      examples:
+        invalidJson:
+          summary: Invalid JSON syntax
+          value:
+            type: "https://synapse.example.com/problems/invalid-json"
+            title: "Invalid JSON"
+            status: 400
+            detail: "Request body contains invalid JSON: unexpected EOF at position 142"
+            instance: "/api/v1/orders"
+        invalidParameter:
+          summary: Invalid query parameter
+          value:
+            type: "https://synapse.example.com/problems/invalid-parameter"
+            title: "Invalid Parameter"
+            status: 400
+            detail: "Parameter 'limit' must be between 1 and 100"
+            instance: "/api/v1/orders"
+            invalidParams:
+              - name: "limit"
+                reason: "value 500 exceeds maximum of 100"
+
+Unauthorized:
+  description: |
+    **Unauthorized** (RFC 9110 §15.5.2)
+    
+    Authentication is required but was not provided or is invalid.
+    
+    Per RFC 6750, the response includes a WWW-Authenticate header
+    indicating the Bearer authentication scheme.
+  headers:
+    WWW-Authenticate:
+      description: Authentication challenge per RFC 6750 §3
+      schema:
+        type: string
+      example: 'Bearer realm="synapse", error="invalid_token", error_description="Token expired"'
+    X-Request-Id:
+      $ref: './headers.yaml#/X-Request-Id'
+  content:
+    application/problem+json:
+      schema:
+        $ref: './schemas/errors.yaml#/ProblemDetails'
+      examples:
+        missingToken:
+          summary: No token provided
+          value:
+            type: "https://synapse.example.com/problems/unauthorized"
+            title: "Unauthorized"
+            status: 401
+            detail: "Authorization header is required"
+            instance: "/api/v1/orders"
+        expiredToken:
+          summary: Token expired
+          value:
+            type: "https://synapse.example.com/problems/token-expired"
+            title: "Token Expired"
+            status: 401
+            detail: "The provided access token has expired"
+            instance: "/api/v1/orders"
+
+NotFound:
+  description: |
+    **Not Found** (RFC 9110 §15.5.5)
+    
+    The requested resource does not exist.
+  headers:
+    X-Request-Id:
+      $ref: './headers.yaml#/X-Request-Id'
+  content:
+    application/problem+json:
+      schema:
+        $ref: './schemas/errors.yaml#/ProblemDetails'
+      example:
+        type: "https://synapse.example.com/problems/not-found"
+        title: "Not Found"
+        status: 404
+        detail: "Order with ID 550e8400-e29b-41d4-a716-446655440000 not found"
+        instance: "/api/v1/orders/550e8400-e29b-41d4-a716-446655440000"
+
+PreconditionFailed:
+  description: |
+    **Precondition Failed** (RFC 9110 §15.5.13)
+    
+    A precondition in the request headers (If-Match, If-Unmodified-Since)
+    evaluated to false. The resource has been modified since the client
+    last retrieved it.
+    
+    The client should GET the current resource state before retrying.
+  headers:
+    ETag:
+      $ref: './headers.yaml#/ETag'
+    X-Request-Id:
+      $ref: './headers.yaml#/X-Request-Id'
+  content:
+    application/problem+json:
+      schema:
+        $ref: './schemas/errors.yaml#/ProblemDetails'
+      example:
+        type: "https://synapse.example.com/problems/precondition-failed"
+        title: "Precondition Failed"
+        status: 412
+        detail: "Resource has been modified. Expected ETag \"abc123\", current ETag \"def456\""
+        instance: "/api/v1/orders/550e8400-e29b-41d4-a716-446655440000"
+        currentETag: '"def456"'
+
+UnprocessableContent:
+  description: |
+    **Unprocessable Content** (RFC 9110 §15.5.21)
+    
+    The request was syntactically valid but semantically invalid.
+    Business validation failed.
+  headers:
+    X-Request-Id:
+      $ref: './headers.yaml#/X-Request-Id'
+  content:
+    application/problem+json:
+      schema:
+        $ref: './schemas/errors.yaml#/ValidationProblemDetails'
+      example:
+        type: "https://synapse.example.com/problems/validation-error"
+        title: "Validation Error"
+        status: 422
+        detail: "Order validation failed: 2 errors"
+        instance: "/api/v1/orders"
+        errors:
+          - field: "items[0].quantity"
+            code: "min_value"
+            message: "Quantity must be at least 1"
+          - field: "totalAmount"
+            code: "amount_mismatch"
+            message: "Total amount does not match sum of item prices"
+
+TooManyRequests:
+  description: |
+    **Too Many Requests** (RFC 6585 §4)
+    
+    Rate limit exceeded. Check RateLimit-* headers for quota information
+    and Retry-After for when to retry.
+  headers:
+    Retry-After:
+      $ref: './headers.yaml#/Retry-After'
+    RateLimit-Limit:
+      $ref: './headers.yaml#/RateLimit-Limit'
+    RateLimit-Remaining:
+      schema:
+        type: integer
+        example: 0
+    RateLimit-Reset:
+      $ref: './headers.yaml#/RateLimit-Reset'
+    X-Request-Id:
+      $ref: './headers.yaml#/X-Request-Id'
+  content:
+    application/problem+json:
+      schema:
+        $ref: './schemas/errors.yaml#/ProblemDetails'
+      example:
+        type: "https://synapse.example.com/problems/rate-limit-exceeded"
+        title: "Too Many Requests"
+        status: 429
+        detail: "Rate limit of 1000 requests per hour exceeded"
+        instance: "/api/v1/orders"
+        retryAfter: 3600
+
+InternalServerError:
+  description: |
+    **Internal Server Error** (RFC 9110 §15.6.1)
+    
+    An unexpected error occurred. The request may be retried.
+    
+    Use the X-Request-Id for support inquiries.
+  headers:
+    X-Request-Id:
+      $ref: './headers.yaml#/X-Request-Id'
+  content:
+    application/problem+json:
+      schema:
+        $ref: './schemas/errors.yaml#/ProblemDetails'
+      example:
+        type: "https://synapse.example.com/problems/internal-error"
+        title: "Internal Server Error"
+        status: 500
+        detail: "An unexpected error occurred. Please try again later."
+        instance: "/api/v1/orders"
+
+ServiceUnavailable:
+  description: |
+    **Service Unavailable** (RFC 9110 §15.6.4)
+    
+    The service is temporarily unavailable, typically due to
+    maintenance or overload. Check the Retry-After header.
+  headers:
+    Retry-After:
+      $ref: './headers.yaml#/Retry-After'
+    X-Request-Id:
+      $ref: './headers.yaml#/X-Request-Id'
+  content:
+    application/problem+json:
+      schema:
+        $ref: './schemas/errors.yaml#/ProblemDetails'
+      example:
+        type: "https://synapse.example.com/problems/service-unavailable"
+        title: "Service Unavailable"
+        status: 503
+        detail: "NATS connection unavailable. The service is degraded."
+        instance: "/api/v1/orders"
+        retryAfter: 30

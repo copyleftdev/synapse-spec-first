@@ -1,0 +1,29 @@
+# Components Index
+
+securitySchemes:
+  BearerAuth:
+    type: http
+    scheme: bearer
+    bearerFormat: JWT
+    description: |
+      JWT Bearer token authentication per RFC 6750.
+      
+      Include the token in the Authorization header:
+      ```
+      Authorization: Bearer <token>
+      ```
+
+schemas:
+  $ref: './schemas/_index.yaml'
+
+parameters:
+  $ref: './parameters.yaml'
+
+headers:
+  $ref: './headers.yaml'
+
+responses:
+  $ref: './responses.yaml'
+
+examples:
+  $ref: './examples/_index.yaml'

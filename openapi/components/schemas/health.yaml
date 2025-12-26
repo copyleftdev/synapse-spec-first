@@ -1,0 +1,57 @@
+# Health Schemas
+
+HealthResponse:
+  type: object
+  required:
+    - status
+    - version
+    - timestamp
+  properties:
+    status:
+      type: string
+      enum:
+        - healthy
+        - degraded
+        - unhealthy
+      description: |
+        Overall service health:
+        - `healthy`: All components operational
+        - `degraded`: Some non-critical components impaired
+        - `unhealthy`: Critical components unavailable
+    version:
+      type: string
+      description: Service version (semver)
+      example: "1.0.0"
+    uptime:
+      type: integer
+      description: Seconds since service started
+    timestamp:
+      type: string
+      format: date-time
+      description: Current server time (RFC 3339)
+    components:
+      type: object
+      additionalProperties:
+        $ref: '#/ComponentHealth'
+      description: Health status of individual dependencies
+
+ComponentHealth:
+  type: object
+  required:
+    - status
+  properties:
+    status:
+      type: string
+      enum:
+        - healthy
+        - unhealthy
+    latencyMs:
+      type: number
+      description: Connection/ping latency in milliseconds
+    error:
+      type: string
+      description: Error message if unhealthy
+    details:
+      type: object
+      additionalProperties: true
+      description: Component-specific details
