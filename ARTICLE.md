@@ -1,7 +1,7 @@
 ---
 title: "Doc-First Development: Because 'We'll Document It Later' Is a Lie"
 published: true
-description: A love letter to specification-driven development, from someone who's been testing for 20 years.
+description: After 20+ years in software, I've seen every approach. Spec-first is the one that actually works. Here's how.
 tags: go, testing, openapi, architecture
 cover_image: https://raw.githubusercontent.com/copyleftdev/synapse-spec-first/main/media/logo.png
 canonical_url: https://github.com/copyleftdev/synapse-spec-first
@@ -9,7 +9,7 @@ canonical_url: https://github.com/copyleftdev/synapse-spec-first
 
 # Doc-First Development: Because "We'll Document It Later" Is a Lie
 
-*A love letter to specification-driven development, from someone who's been testing for 20 years.*
+*After 20+ years in software, I've seen every approach to building systems. This is the one that actually works.*
 
 Every time I mention "doc-first" or "spec-driven development" to engineers, I get blank stares. 
 
