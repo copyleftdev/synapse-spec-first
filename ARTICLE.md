@@ -221,15 +221,36 @@ The overhead is front-loaded. The payoff compounds forever.
 git clone https://github.com/copyleftdev/synapse-spec-first.git
 cd synapse-spec-first
 
-# Run the generator
-go run ./cmd/synctl
+# One-time setup
+make setup
 
 # Run all tests (including conformance)
-go test ./... -v
+make test
 
 # Start the server
-go run ./cmd/synapse
+make run
 ```
+
+### The Makefile Experience
+
+We've included a comprehensive Makefile because developer experience matters:
+
+```bash
+make help              # See all available commands
+make generate          # Regenerate code from specs
+make test-conformance  # Run contract tests
+make test-pipeline     # Run integration tests
+make diagrams          # Generate architecture diagrams
+make dev               # generate → test → run (full cycle)
+```
+
+| Workflow | Command |
+|----------|---------|
+| First time setup | `make setup` |
+| After spec changes | `make generate` |
+| Quick validation | `make test-short` |
+| Full test suite | `make test` |
+| CI pipeline | `make ci` |
 
 {% github copyleftdev/synapse-spec-first %}
 

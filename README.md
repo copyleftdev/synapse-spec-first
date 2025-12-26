@@ -26,18 +26,60 @@ This project demonstrates a **doc-first development workflow**:
 git clone https://github.com/copyleftdev/synapse-spec-first.git
 cd synapse-spec-first
 
-# Download dependencies
-go mod tidy
-
-# Generate code from specs
-go run ./cmd/synctl
+# One-time setup (downloads deps + generates code)
+make setup
 
 # Run all tests
-go test ./... -v
+make test
 
-# Run the server
-go run ./cmd/synapse
+# Start the server
+make run
 ```
+
+## Makefile Commands
+
+This project includes a comprehensive Makefile for a pleasant developer experience:
+
+```bash
+make help              # Show all available targets
+```
+
+### 🚀 Quick Commands
+
+| Command | Description |
+|---------|-------------|
+| `make setup` | One-time setup for new clones |
+| `make generate` | Regenerate code from specs |
+| `make test` | Run all tests (requires Docker) |
+| `make test-short` | Run fast tests (no Docker) |
+| `make run` | Start the server |
+
+### 🧪 Testing
+
+| Command | Description |
+|---------|-------------|
+| `make test-conformance` | Run OpenAPI/AsyncAPI conformance tests |
+| `make test-pipeline` | Run pipeline integration tests |
+| `make coverage` | Generate coverage report |
+| `make benchmark` | Run benchmarks |
+
+### 🔧 Development
+
+| Command | Description |
+|---------|-------------|
+| `make lint` | Format and vet code |
+| `make build` | Build the synapse binary |
+| `make diagrams` | Generate architecture diagrams |
+| `make validate-specs` | Validate OpenAPI/AsyncAPI specs |
+| `make clean` | Remove build artifacts |
+
+### 🔄 Workflow Shortcuts
+
+| Command | Description |
+|---------|-------------|
+| `make dev` | generate → test-short → run |
+| `make ci` | deps → generate → lint → test |
+| `make all` | Full build pipeline |
 
 ## The Philosophy
 
