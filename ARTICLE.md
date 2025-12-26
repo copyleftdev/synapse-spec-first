@@ -1,5 +1,5 @@
 ---
-title: "We're Software Engineers. We Create Worlds."
+title: "Doc-First Development: Because 'We'll Document It Later' Is a Lie"
 published: true
 description: A love letter to specification-driven development, from someone who's been testing for 20 years.
 tags: go, testing, openapi, architecture
@@ -7,7 +7,7 @@ cover_image: https://raw.githubusercontent.com/copyleftdev/synapse-spec-first/ma
 canonical_url: https://github.com/copyleftdev/synapse-spec-first
 ---
 
-# We're Software Engineers. We Create Worlds.
+# Doc-First Development: Because "We'll Document It Later" Is a Lie
 
 *A love letter to specification-driven development, from someone who's been testing for 20 years.*
 
