@@ -1,24 +1,31 @@
-# We're Software Engineers. We Can Create Worlds.
+---
+title: "We're Software Engineers. We Create Worlds."
+published: true
+description: A love letter to specification-driven development, from someone who's been testing for 20 years.
+tags: go, testing, openapi, architecture
+cover_image: https://raw.githubusercontent.com/copyleftdev/synapse-spec-first/main/scripts/output/architecture.png
+canonical_url: https://github.com/copyleftdev/synapse-spec-first
+---
+
+# We're Software Engineers. We Create Worlds.
 
 *A love letter to specification-driven development, from someone who's been testing for 20 years.*
 
----
-
-## The Blank Stares
-
-Every time I mention "doc-first" or "spec-driven development" to younger engineers, I get blank stares. 
+Every time I mention "doc-first" or "spec-driven development" to engineers, I get blank stares. 
 
 *"That sounds great in a perfect world."*
 
 Here's the thing: **We're software engineers. We create worlds.** Why wouldn't we try to make them perfect?
 
-This article—and this entire codebase—exists to demonstrate that spec-first isn't some ivory tower ideal. It's practical. It's powerful. And with the tools we have today, it's easier than ever.
+This article—and the [complete codebase on GitHub](https://github.com/copyleftdev/synapse-spec-first)—exists to demonstrate that spec-first isn't some ivory tower ideal. It's practical. It's powerful. And with the tools we have today, it's easier than ever.
 
 ---
 
-## What This Project Demonstrates
+## 🎯 What We're Building
 
 **Synapse** is a complete event-driven order processing system built entirely spec-first:
+
+![System Architecture](https://raw.githubusercontent.com/copyleftdev/synapse-spec-first/main/scripts/output/architecture.png)
 
 1. **Specifications are the source of truth** — OpenAPI 3.1 for REST, AsyncAPI 3.0 for events
 2. **Code is generated from specs** — Types, interfaces, clients, event handlers
@@ -29,138 +36,70 @@ The result? A system where the contract is king, drift is impossible, and tests 
 
 ---
 
-## The Philosophy
+## 📐 The Doc-First Philosophy
 
-### 1. Define Before You Build
+![Doc-First Lifecycle](https://raw.githubusercontent.com/copyleftdev/synapse-spec-first/main/scripts/output/doc_first_lifecycle.png)
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    SPECIFICATION                             │
-│         (The contract. The promise. The truth.)             │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    GENERATED CODE                            │
-│         (Types, interfaces, clients, handlers)               │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    IMPLEMENTATION                            │
-│         (Fill in the blanks. The spec guides you.)          │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                 CONFORMANCE TESTING                          │
-│         (Prove it. Against the spec. Always.)               │
-└─────────────────────────────────────────────────────────────┘
-```
+### Define Before You Build
 
-### 2. Generated > Handwritten
+Traditional development flows like this:
+> Write code → Document later (maybe) → Hope nothing drifts
+
+Doc-first development flips the script:
+> Write spec → Generate code → Implement interfaces → Prove conformance
+
+### Generated > Handwritten
 
 When code is generated from specs:
-- **No drift** between documentation and implementation
-- **Type safety** is guaranteed by the spec
-- **Clients can be auto-generated** for any language
-- **Changes flow from spec → code**, never backwards
 
-### 3. Conformance Over Coverage
+- ✅ **No drift** between documentation and implementation
+- ✅ **Type safety** guaranteed by the spec
+- ✅ **Clients auto-generated** for any language
+- ✅ **Changes flow spec → code**, never backwards
+
+### Conformance Over Coverage
 
 Traditional testing asks: *"Does the code do what the code says?"*
 
-Conformance testing asks: *"Does the code do what the contract says?"*
+Conformance testing asks: *"Does the code do what the **contract** says?"*
 
-One tests implementation. The other tests promises.
-
----
-
-## Standing on the Shoulders of Giants
-
-This project wouldn't be possible without the work of brilliant people who came before:
-
-### Specification Standards
-- **OpenAPI Initiative** — For giving REST APIs a language
-- **AsyncAPI Initiative** — For doing the same for event-driven systems
-- **JSON Schema** — The foundation that makes validation possible
-
-### Testing Infrastructure
-- **Testcontainers** — Richard North and the team who made "real" integration testing accessible
-- **Watermill** — Three Dots Labs for making Go event-driven development elegant
-
-### The Go Ecosystem
-- **Chi** — Lightweight routing done right
-- **NATS** — Derek Collison's gift to distributed systems
-- **PostgreSQL** & **Redis** — The workhorses we all depend on
-
-To all of you: thank you. You made this possible.
+One tests implementation. The other tests **promises**.
 
 ---
 
-## The Codebase
+## 🔧 The Pipeline
 
-### Project Structure
+![Pipeline Stages](https://raw.githubusercontent.com/copyleftdev/synapse-spec-first/main/scripts/output/pipeline_stages.png)
 
-```
-synapse/
-├── asyncapi/                  # Event specifications (AsyncAPI 3.0)
-│   └── asyncapi.yaml
-├── openapi/                   # REST API specifications (OpenAPI 3.1)
-│   ├── openapi.yaml
-│   ├── paths/
-│   └── components/
-├── cmd/
-│   ├── synapse/               # Application entry point
-│   └── synctl/                # Custom code generator
-├── internal/
-│   ├── generated/             # Generated from specs
-│   │   ├── types.gen.go       # 31 domain types
-│   │   ├── server.gen.go      # HTTP interface
-│   │   ├── client.gen.go      # HTTP client
-│   │   └── events.gen.go      # Event handlers
-│   ├── handler/               # HTTP handler implementations
-│   ├── pipeline/              # Watermill event pipeline
-│   ├── conformance/           # Contract testing framework
-│   └── testutil/              # Testcontainers helpers
-└── scripts/                   # Diagram generation
-```
+Orders flow through three Watermill-powered stages:
 
-### The Workflow
+| Stage | Purpose |
+|-------|---------|
+| **Validate** | Check required fields, verify amounts, validate customer |
+| **Enrich** | Customer tier lookup, fraud scoring, inventory check |
+| **Route** | Apply routing rules, determine destination, set priority |
 
-```bash
-# 1. Edit the spec (the source of truth)
-vim openapi/components/schemas/orders.yaml
-
-# 2. Regenerate code
-go run ./cmd/synctl
-
-# 3. Implement the new interface methods
-# (The compiler tells you what's missing)
-
-# 4. Run conformance tests
-go test ./internal/conformance/... -v
-
-# 5. Verify against spec
-# Tests validate your responses match the OpenAPI schema
-# Tests validate your events match the AsyncAPI schema
-```
+Each stage publishes to NATS, persists to PostgreSQL, and caches in Redis. Failed events go to a Dead Letter Queue for retry.
 
 ---
 
-## Conformance in Action
+## 🧪 Testing Strategy
+
+![Testing Strategy](https://raw.githubusercontent.com/copyleftdev/synapse-spec-first/main/scripts/output/testing_strategy.png)
 
 ### OpenAPI Conformance
 
 ```go
 func TestOpenAPI_HealthEndpoint_ConformsToSpec(t *testing.T) {
-    // Start real infrastructure
+    // Start real infrastructure with Testcontainers
     tc, _ := testutil.StartContainers(ctx, t, nil)
     
     // Create test suite from OpenAPI spec
-    suite, _ := conformance.NewContractTestSuite("openapi/openapi.yaml")
+    suite, _ := conformance.NewContractTestSuite(
+        "openapi/openapi.yaml",
+    )
     
-    // Validate response matches spec
+    // Validate response matches spec schema
     result := suite.RunTest(ctx, client, baseURL,
         "GET", "/health",
         nil,
@@ -177,7 +116,9 @@ func TestOpenAPI_HealthEndpoint_ConformsToSpec(t *testing.T) {
 ```go
 func TestAsyncAPI_OrderPayload_ConformsToSpec(t *testing.T) {
     // Create validator from AsyncAPI spec
-    suite, _ := conformance.NewEventContractTestSuite("asyncapi/asyncapi.yaml")
+    suite, _ := conformance.NewEventContractTestSuite(
+        "asyncapi/asyncapi.yaml",
+    )
     
     // Validate event payload against schema
     result := suite.ValidateEvent(
@@ -192,39 +133,88 @@ func TestAsyncAPI_OrderPayload_ConformsToSpec(t *testing.T) {
 
 ---
 
-## Why This Matters
+## 📁 Project Structure
 
-In 20 years of testing, I've seen systems rot. Documentation lies. Implementations drift. Contracts break silently.
-
-**Spec-first development is the antidote.**
-
-When the spec is the source of truth:
-- Documentation is always accurate (it *is* the code)
-- Breaking changes are visible (the spec diff shows them)
-- Clients can trust the contract (it's validated, not assumed)
-- Onboarding is faster (read the spec, understand the system)
+```
+synapse-spec-first/
+├── asyncapi/              # AsyncAPI 3.0 event specs
+├── openapi/               # OpenAPI 3.1 REST specs
+├── cmd/
+│   ├── synapse/           # Application entry point
+│   └── synctl/            # Custom code generator
+├── internal/
+│   ├── generated/         # Generated from specs
+│   │   ├── types.gen.go   # 31 domain types
+│   │   ├── server.gen.go  # HTTP interface
+│   │   ├── client.gen.go  # HTTP client
+│   │   └── events.gen.go  # Event handlers
+│   ├── handler/           # HTTP handlers
+│   ├── pipeline/          # Watermill pipeline
+│   ├── conformance/       # Contract testing
+│   └── testutil/          # Testcontainers
+└── scripts/               # Diagram generation
+```
 
 ---
 
-## "But in the Real World..."
+## 🔄 The Workflow
 
-I've heard it all:
+```bash
+# 1. Edit the spec (the source of truth)
+vim openapi/components/schemas/orders.yaml
 
-*"We don't have time to write specs first."*
+# 2. Regenerate code
+go run ./cmd/synctl
 
-You don't have time to debug integration issues caused by undocumented API changes either. Pick your poison.
+# 3. Implement the new interface methods
+# (The compiler tells you what's missing)
 
-*"Specs get out of date."*
+# 4. Run conformance tests
+go test ./internal/conformance/... -v
+```
+
+That's it. Spec changes → regenerate → implement → verify. The spec leads, the code follows.
+
+---
+
+## 🙏 Standing on Shoulders
+
+This project wouldn't be possible without brilliant work from:
+
+**Specification Standards**
+- [OpenAPI Initiative](https://www.openapis.org/) — Giving REST APIs a language
+- [AsyncAPI Initiative](https://www.asyncapi.com/) — The same for event-driven systems
+- [JSON Schema](https://json-schema.org/) — The foundation for validation
+
+**Testing Infrastructure**
+- [Testcontainers](https://testcontainers.com/) — Real integration testing made accessible
+- [Watermill](https://watermill.io/) — Elegant Go event-driven development
+
+**The Go Ecosystem**
+- [Chi](https://github.com/go-chi/chi) — Lightweight routing done right
+- [NATS](https://nats.io/) — Derek Collison's gift to distributed systems
+
+---
+
+## 🤔 "But in the Real World..."
+
+I've heard every objection:
+
+> *"We don't have time to write specs first."*
+
+You don't have time to debug integration issues from undocumented API changes either. Pick your poison.
+
+> *"Specs get out of date."*
 
 Not when they generate code. Not when conformance tests fail on drift.
 
-*"It's too much overhead."*
+> *"It's too much overhead."*
 
 The overhead is front-loaded. The payoff compounds forever.
 
 ---
 
-## Try It Yourself
+## 🚀 Try It Yourself
 
 ```bash
 # Clone the repo
@@ -241,9 +231,11 @@ go test ./... -v
 go run ./cmd/synapse
 ```
 
+{% github copyleftdev/synapse-spec-first %}
+
 ---
 
-## A Challenge
+## 💪 A Challenge
 
 If you've never tried spec-first development, I challenge you:
 
@@ -258,7 +250,9 @@ Then tell me it's not worth it.
 
 ---
 
-## Final Thoughts
+## 🌟 Final Thoughts
+
+![Philosophy](https://raw.githubusercontent.com/copyleftdev/synapse-spec-first/main/scripts/output/philosophy.png)
 
 Someone once told me, *"In a perfect world, that would be great."*
 
@@ -270,18 +264,15 @@ Why wouldn't we try to make them perfect?
 
 *This project is a living demonstration. Fork it. Learn from it. Improve it. And maybe, just maybe, next time someone mentions doc-first development, there will be one fewer blank stare.*
 
----
-
-## Acknowledgments
-
-To the testing community. To the specification authors. To everyone who believes that quality isn't an afterthought.
-
-To chaos engineering, mutation testing, property-based testing, and every technique that makes software better.
-
-And to you, for reading this far.
+**20 years of testing taught me this: Quality isn't an afterthought. It's the architecture.**
 
 Now go build something beautiful.
 
 ---
 
-**Author's Note:** This codebase was built to accompany an article on specification-driven development. Every file, every test, every diagram exists to prove a point: that the "perfect world" is the one we choose to build.
+## 📚 Resources
+
+- **Full Codebase**: [github.com/copyleftdev/synapse-spec-first](https://github.com/copyleftdev/synapse-spec-first)
+- **OpenAPI Spec**: [openapi/openapi.yaml](https://github.com/copyleftdev/synapse-spec-first/blob/main/openapi/openapi.yaml)
+- **AsyncAPI Spec**: [asyncapi/asyncapi.yaml](https://github.com/copyleftdev/synapse-spec-first/blob/main/asyncapi/asyncapi.yaml)
+- **Conformance Tests**: [internal/conformance/](https://github.com/copyleftdev/synapse-spec-first/tree/main/internal/conformance)
