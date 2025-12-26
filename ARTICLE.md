@@ -3,7 +3,7 @@ title: "We're Software Engineers. We Create Worlds."
 published: true
 description: A love letter to specification-driven development, from someone who's been testing for 20 years.
 tags: go, testing, openapi, architecture
-cover_image: https://raw.githubusercontent.com/copyleftdev/synapse-spec-first/main/scripts/output/architecture.png
+cover_image: https://raw.githubusercontent.com/copyleftdev/synapse-spec-first/main/media/logo.png
 canonical_url: https://github.com/copyleftdev/synapse-spec-first
 ---
 

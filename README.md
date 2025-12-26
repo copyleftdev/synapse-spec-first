@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="media/logo.png" alt="Synapse Mascot" width="400">
+</p>
+
 # Synapse: Doc-First Event Processing
 
 > *"We're software engineers. We create worlds. Why wouldn't we try to make them perfect?"*
